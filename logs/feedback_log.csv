@@ -1,0 +1,8 @@
+timestamp,trip_id,vehicle_id,decision,true_label,fuel_drop,speed_max
+2026-06-02 13:29:22,V9_PARKED,9,✅ Confirmed Theft / Incident,1,14.63,0.0
+2026-06-04 13:08:18,V0_PARKED,0,❌ False Alarm (Authorised),0,3.19,1.85
+2026-06-06 01:36:29,V4_T0001,4,❌ False Alarm (Authorised),0,4.4,0.0
+2026-06-06 01:36:47,V2_PARKED,2,✅ Confirmed Theft / Incident,1,38.75,0.0
+2026-06-06 01:37:59,V1_T0003,1,✅ Confirmed Theft / Incident,1,2.97,83.25
+2026-06-11 09:44:19,V0_PARKED,0,✅ Confirmed Theft / Incident,1,20.6,51.8
+2026-06-11 11:27:43,V8_T0005,8,✅ Confirmed Theft / Incident,1,4.3,101.75
