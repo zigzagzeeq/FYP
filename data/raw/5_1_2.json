@@ -1,0 +1,110 @@
+[
+    [
+        [
+            {
+                "datetime": "2024-05-01 09:57:21",
+                "mileage": 48543.82,
+                "heading": 0.0,
+                "speed": 0.0,
+                "longitude": 101.326293,
+                "latitude": 2.958236,
+                "acc": 0,
+                "event_message": "AP REPORT",
+                "fuel1_volume": 83.79,
+                "fuel2_volume": 77.77,
+                "temperature": "0"
+            },
+            {
+                "datetime": "2024-05-01 10:58:26",
+                "mileage": 48543.82,
+                "heading": 0.0,
+                "speed": 0.0,
+                "longitude": 101.326293,
+                "latitude": 2.958236,
+                "acc": 0,
+                "event_message": "AP REPORT",
+                "fuel1_volume": 83.79,
+                "fuel2_volume": 77.77,
+                "temperature": "0"
+            },
+            {
+                "datetime": "2024-05-01 11:59:31",
+                "mileage": 48543.82,
+                "heading": 0.0,
+                "speed": 0.0,
+                "longitude": 101.326293,
+                "latitude": 2.958236,
+                "acc": 0,
+                "event_message": "AP REPORT",
+                "fuel1_volume": 83.79,
+                "fuel2_volume": 77.77,
+                "temperature": "0"
+            },
+            {
+                "datetime": "2024-05-01 13:00:36",
+                "mileage": 48543.82,
+                "heading": 0.0,
+                "speed": 0.0,
+                "longitude": 101.326293,
+                "latitude": 2.958236,
+                "acc": 0,
+                "event_message": "AP REPORT",
+                "fuel1_volume": 83.79,
+                "fuel2_volume": 77.77,
+                "temperature": "0"
+            },
+            {
+                "datetime": "2024-05-01 14:01:40",
+                "mileage": 48543.82,
+                "heading": 0.0,
+                "speed": 0.0,
+                "longitude": 101.326293,
+                "latitude": 2.958236,
+                "acc": 0,
+                "event_message": "AP REPORT",
+                "fuel1_volume": 83.79,
+                "fuel2_volume": 77.77,
+                "temperature": "0"
+            },
+            {
+                "datetime": "2024-05-01 15:02:44",
+                "mileage": 48543.82,
+                "heading": 0.0,
+                "speed": 0.0,
+                "longitude": 101.326293,
+                "latitude": 2.958236,
+                "acc": 0,
+                "event_message": "AP REPORT",
+                "fuel1_volume": 83.79,
+                "fuel2_volume": 77.77,
+                "temperature": "0"
+            },
+            {
+                "datetime": "2024-05-01 16:03:49",
+                "mileage": 48543.82,
+                "heading": 0.0,
+                "speed": 0.0,
+                "longitude": 101.326293,
+                "latitude": 2.958236,
+                "acc": 0,
+                "event_message": "AP REPORT",
+                "fuel1_volume": 83.79,
+                "fuel2_volume": 77.77,
+                "temperature": "0"
+            },
+            {
+                "datetime": "2024-05-01 16:39:19",
+                "mileage": 48543.82,
+                "heading": 0.0,
+                "speed": 0.0,
+                "longitude": 101.326293,
+                "latitude": 2.958236,
+                "acc": 0,
+                "event_message": "AP REPORT",
+                "fuel1_volume": 83.79,
+                "fuel2_volume": 77.77,
+                "temperature": "0"
+            }
+        ]
+    ]
+]

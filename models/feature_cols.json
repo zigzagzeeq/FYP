@@ -1,0 +1,1 @@
+["start_hour", "day_of_week", "is_weekend", "is_night", "is_earlyam", "is_lunchtime", "speed_mean", "speed_std", "speed_cv", "speed_above_80_ratio", "speed_above_100_ratio", "decel_events", "idle_time_s", "idle_ratio", "total_km", "stop_count", "km_per_hour", "stops_per_km", "heading_std", "heading_changes", "fuel_drop_rate"]

@@ -1,0 +1,136 @@
+[
+    [
+        [
+            {
+                "datetime": "2024-08-01 09:35:09",
+                "mileage": 193138.063,
+                "heading": 0.0,
+                "speed": 0.0,
+                "longitude": 101.392577,
+                "latitude": 3.04367,
+                "acc": 0,
+                "event_message": "AP REPORT",
+                "fuel1_volume": 119.63,
+                "fuel2_volume": 149.33,
+                "temperature": "0"
+            },
+            {
+                "datetime": "2024-08-01 10:36:09",
+                "mileage": 193138.063,
+                "heading": 0.0,
+                "speed": 0.0,
+                "longitude": 101.392577,
+                "latitude": 3.04367,
+                "acc": 0,
+                "event_message": "AP REPORT",
+                "fuel1_volume": 119.63,
+                "fuel2_volume": 49.7,
+                "temperature": "0"
+            },
+            {
+                "datetime": "2024-08-01 11:37:09",
+                "mileage": 193138.063,
+                "heading": 0.0,
+                "speed": 0.0,
+                "longitude": 101.392577,
+                "latitude": 3.04367,
+                "acc": 0,
+                "event_message": "AP REPORT",
+                "fuel1_volume": 119.63,
+                "fuel2_volume": 49.7,
+                "temperature": "0"
+            },
+            {
+                "datetime": "2024-08-01 12:38:09",
+                "mileage": 193138.063,
+                "heading": 0.0,
+                "speed": 0.0,
+                "longitude": 101.392577,
+                "latitude": 3.04367,
+                "acc": 0,
+                "event_message": "AP REPORT",
+                "fuel1_volume": 119.63,
+                "fuel2_volume": 49.7,
+                "temperature": "0"
+            },
+            {
+                "datetime": "2024-08-01 13:39:08",
+                "mileage": 193138.063,
+                "heading": 0.0,
+                "speed": 0.0,
+                "longitude": 101.392577,
+                "latitude": 3.04367,
+                "acc": 0,
+                "event_message": "AP REPORT",
+                "fuel1_volume": 64.24,
+                "fuel2_volume": 49.7,
+                "temperature": "0"
+            },
+            {
+                "datetime": "2024-08-01 14:40:08",
+                "mileage": 193138.063,
+                "heading": 0.0,
+                "speed": 0.0,
+                "longitude": 101.392577,
+                "latitude": 3.04367,
+                "acc": 0,
+                "event_message": "AP REPORT",
+                "fuel1_volume": 50.55,
+                "fuel2_volume": 49.7,
+                "temperature": "0"
+            },
+            {
+                "datetime": "2024-08-01 15:41:08",
+                "mileage": 193138.063,
+                "heading": 0.0,
+                "speed": 0.0,
+                "longitude": 101.392577,
+                "latitude": 3.04367,
+                "acc": 0,
+                "event_message": "AP REPORT",
+                "fuel1_volume": 120.26,
+                "fuel2_volume": 49.7,
+                "temperature": "0"
+            },
+            {
+                "datetime": "2024-08-01 16:42:07",
+                "mileage": 193138.063,
+                "heading": 0.0,
+                "speed": 0.0,
+                "longitude": 101.392577,
+                "latitude": 3.04367,
+                "acc": 0,
+                "event_message": "AP REPORT",
+                "fuel1_volume": 120.48,
+                "fuel2_volume": 37.91,
+                "temperature": "0"
+            },
+            {
+                "datetime": "2024-08-01 17:43:07",
+                "mileage": 193138.063,
+                "heading": 0.0,
+                "speed": 0.0,
+                "longitude": 101.392577,
+                "latitude": 3.04367,
+                "acc": 0,
+                "event_message": "AP REPORT",
+                "fuel1_volume": 120.05,
+                "fuel2_volume": 39.8,
+                "temperature": "0"
+            },
+            {
+                "datetime": "2024-08-01 17:56:46",
+                "mileage": 193138.063,
+                "heading": 0.0,
+                "speed": 0.0,
+                "longitude": 101.392577,
+                "latitude": 3.04367,
+                "acc": 0,
+                "event_message": "MAIN POWER CUT ALARM _ TRK",
+                "fuel1_volume": 120.26,
+                "fuel2_volume": 39.8,
+                "temperature": "0"
+            }
+        ]
+    ]
+]
