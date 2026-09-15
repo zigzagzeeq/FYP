@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import altair as alt
 import numpy as np
 import joblib
 import os
@@ -10,13 +11,338 @@ from datetime import datetime
 
 # ── Page Config ───────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Logistics Fleet Security System",
+    page_title="Fleet Security — Depot Control",
     page_icon="🛡️",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-st.title("🛡️ Logistics Fleet Security System")
-st.markdown("**Predictive Modelling of Anomalous Driver Behaviour**")
+# ══════════════════════════════════════════════════════════════════════
+# THEME
+# Depot control-room palette: cool steel surfaces, signal colours used
+# only to carry meaning (amber = flagged, teal = cleared, red = confirmed).
+# Light and dark share the same structure — only the token values differ.
+# ══════════════════════════════════════════════════════════════════════
+LIGHT_TOKENS = {
+    "bg":           "#F3F5F7",
+    "surface":      "#FFFFFF",
+    "steel-100":    "#E6EAEE",
+    "steel-200":    "#D2D9E0",
+    "steel-400":    "#8C9AA6",
+    "ink":          "#1B2A33",
+    "ink-soft":     "#55646F",
+    "navy":         "#14506B",
+    "navy-hover":   "#0E3D53",
+    "navy-on":      "#FFFFFF",
+    "amber":        "#C97A0A",
+    "amber-bg":     "#FDF4E3",
+    "amber-text":   "#7A4A05",
+    "teal":         "#0E7C66",
+    "teal-bg":      "#E8F4F1",
+    "teal-text":    "#0B5F4E",
+    "red":          "#A32E2E",
+    "red-bg":       "#FBEDED",
+    "red-text":     "#7A1F1F",
+    "menu-hover":   "#E6EAEE",
+}
+
+DARK_TOKENS = {
+    "bg":           "#0F171D",
+    "surface":      "#1B262E",
+    "steel-100":    "#243139",
+    "steel-200":    "#324150",
+    "steel-400":    "#8496A2",
+    "ink":          "#E7ECEF",
+    "ink-soft":     "#AAB8C2",
+    "navy":         "#4CA3CC",
+    "navy-hover":   "#68B4D8",
+    "navy-on":      "#08151C",
+    "amber":        "#E0983A",
+    "amber-bg":     "#33260F",
+    "amber-text":   "#F2C179",
+    "teal":         "#39B597",
+    "teal-bg":      "#0F2C24",
+    "teal-text":    "#8CE0C8",
+    "red":          "#E07070",
+    "red-bg":       "#331414",
+    "red-text":     "#F2A9A9",
+    "menu-hover":   "#243139",
+}
+
+
+def build_theme_css(mode: str) -> str:
+    t = DARK_TOKENS if mode == "dark" else LIGHT_TOKENS
+    return f"""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {{
+  --steel-50:   {t['bg']};
+  --surface:    {t['surface']};
+  --steel-100:  {t['steel-100']};
+  --steel-200:  {t['steel-200']};
+  --steel-400:  {t['steel-400']};
+  --ink:        {t['ink']};
+  --ink-soft:   {t['ink-soft']};
+  --navy:       {t['navy']};
+  --navy-hover: {t['navy-hover']};
+  --navy-on:    {t['navy-on']};
+  --amber:      {t['amber']};
+  --amber-bg:   {t['amber-bg']};
+  --amber-text: {t['amber-text']};
+  --teal:       {t['teal']};
+  --teal-bg:    {t['teal-bg']};
+  --teal-text:  {t['teal-text']};
+  --red:        {t['red']};
+  --red-bg:     {t['red-bg']};
+  --red-text:   {t['red-text']};
+  --menu-hover: {t['menu-hover']};
+}}
+
+html, body, [class*="css"], .stApp, section[data-testid="stSidebar"] {{
+  font-family: 'Barlow', system-ui, sans-serif;
+}}
+.stApp {{ background: var(--steel-50); color: var(--ink); }}
+
+/* ── Masthead ───────────────────────────────────────────────── */
+.masthead {{
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 1.5rem; flex-wrap: wrap;
+  border-bottom: 2px solid var(--ink);
+  padding: .2rem 0 .7rem; margin-bottom: 1.4rem;
+}}
+.masthead h1 {{
+  font-size: 1.85rem; font-weight: 700; letter-spacing: -.02em;
+  margin: 0; color: var(--ink); line-height: 1.1;
+}}
+.masthead .sub {{ font-size: .95rem; color: var(--ink-soft); margin: .25rem 0 0; }}
+.masthead .stamp {{
+  font-family: 'IBM Plex Mono', monospace; font-size: .74rem;
+  color: var(--ink-soft); text-align: right; line-height: 1.6; white-space: nowrap;
+}}
+
+/* ── KPI tiles ──────────────────────────────────────────────── */
+.kpi-row {{ display: flex; gap: .7rem; flex-wrap: wrap; margin-bottom: .4rem; }}
+.kpi {{
+  flex: 1 1 165px; background: var(--surface);
+  border: 1px solid var(--steel-200); border-left: 3px solid var(--steel-400);
+  border-radius: 3px; padding: .75rem .9rem .8rem;
+}}
+.kpi .label {{ font-size: .78rem; font-weight: 500; color: var(--ink-soft) !important; margin-bottom: .3rem; }}
+.kpi .value {{
+  font-family: 'IBM Plex Mono', monospace; font-size: 1.5rem; font-weight: 500;
+  color: var(--ink); line-height: 1.1; letter-spacing: -.02em;
+}}
+.kpi .foot {{ font-size: .74rem; color: var(--steel-400) !important; margin-top: .3rem; }}
+.kpi.flag  {{ border-left-color: var(--amber); }}
+.kpi.flag  .value {{ color: var(--amber) !important; }}
+.kpi.clear {{ border-left-color: var(--teal); }}
+.kpi.clear .value {{ color: var(--teal) !important; }}
+.kpi.alert {{ border-left-color: var(--red); }}
+.kpi.alert .value {{ color: var(--red) !important; }}
+.kpi.key   {{ border-left-color: var(--navy); }}
+.kpi.key   .value {{ color: var(--navy) !important; }}
+
+/* ── Section headings ───────────────────────────────────────── */
+.sect {{
+  font-size: 1.08rem; font-weight: 600; color: var(--ink) !important;
+  margin: 1.5rem 0 .2rem; padding-bottom: .3rem; border-bottom: 1px solid var(--steel-200);
+}}
+.sect-note {{ font-size: .86rem; color: var(--ink-soft) !important; margin: .35rem 0 .7rem; }}
+
+/* ── Status pills (sidebar) ─────────────────────────────────── */
+.pill {{
+  display: block; font-size: .82rem; padding: .4rem .6rem;
+  border-radius: 3px; margin-bottom: .35rem; border-left: 3px solid transparent;
+}}
+.pill.ok, .pill.ok *     {{ background: var(--teal-bg);  color: var(--teal-text) !important; }}
+.pill.ok                 {{ border-left-color: var(--teal); }}
+.pill.warn, .pill.warn * {{ background: var(--amber-bg); color: var(--amber-text) !important; }}
+.pill.warn                {{ border-left-color: var(--amber); }}
+.pill .mono {{ font-family: 'IBM Plex Mono', monospace; font-size: .76rem; }}
+
+/* ── Verdict banner ─────────────────────────────────────────── */
+.verdict {{ border-radius: 3px; padding: .8rem 1rem; margin: .6rem 0; border-left: 3px solid; font-size: .95rem; }}
+.verdict.flag,  .verdict.flag *  {{ background: var(--amber-bg); border-color: var(--amber); color: var(--amber-text) !important; }}
+.verdict.clear, .verdict.clear * {{ background: var(--teal-bg);  border-color: var(--teal);  color: var(--teal-text) !important; }}
+
+/* ── Streamlit widget overrides ─────────────────────────────── */
+.stTabs [data-baseweb="tab-list"] {{ gap: 0; border-bottom: 1px solid var(--steel-200); background: transparent; }}
+.stTabs [data-baseweb="tab"] {{
+  height: 42px; padding: 0 1.05rem; background: transparent;
+  font-size: .93rem; font-weight: 500; color: var(--ink-soft);
+  border-bottom: 2px solid transparent; border-radius: 0;
+}}
+.stTabs [data-baseweb="tab"] * {{ color: inherit !important; }}
+.stTabs [aria-selected="true"] {{
+  color: var(--ink) !important; font-weight: 600;
+  border-bottom: 2px solid var(--navy) !important; background: transparent !important;
+}}
+
+.stButton > button, .stButton > button * {{ color: var(--ink) !important; }}
+.stButton > button {{
+  border-radius: 3px; font-weight: 600; font-size: .9rem;
+  border: 1px solid var(--steel-200); padding: .45rem 1rem; background: var(--surface);
+}}
+.stButton > button[kind="primary"], .stButton > button[kind="primary"] * {{
+  background: var(--navy); border-color: var(--navy); color: var(--navy-on) !important;
+}}
+.stButton > button[kind="primary"]:hover {{ background: var(--navy-hover); border-color: var(--navy-hover); }}
+.stDownloadButton > button, .stDownloadButton > button * {{ color: var(--ink) !important; }}
+
+section[data-testid="stSidebar"] {{ background: var(--surface); border-right: 1px solid var(--steel-200); }}
+section[data-testid="stSidebar"] h2 {{
+  font-size: .95rem; font-weight: 600; color: var(--ink) !important;
+  border-bottom: 1px solid var(--steel-200); padding-bottom: .35rem;
+}}
+
+[data-testid="stDataFrame"] {{ border: 1px solid var(--steel-200); border-radius: 3px; }}
+[data-testid="stDataFrame"] * {{ color: var(--ink); }}
+hr {{ border-color: var(--steel-200); }}
+#MainMenu, footer {{ visibility: hidden; }}
+
+/* ── Base text everywhere ──────────────────────────────────── */
+.stApp, .stApp p, .stApp li, .stApp label, .stApp span, .stApp div, .stMarkdown,
+section[data-testid="stSidebar"] * {{ color: var(--ink); }}
+.stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 {{ color: var(--ink); }}
+.stApp [data-testid="stCaptionContainer"], .stApp [data-testid="stCaptionContainer"] *,
+.stApp small, .stApp .stCaption {{ color: var(--ink-soft) !important; }}
+
+/* ── Radios / checkboxes ───────────────────────────────────── */
+.stRadio label, .stRadio label *, [data-testid="stRadio"] label, [data-testid="stRadio"] label * {{
+  color: var(--ink) !important;
+}}
+.stRadio [role="radiogroup"] label {{ cursor: pointer; }}
+.stRadio [role="radiogroup"] label:has(input:checked),
+[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {{
+  color: var(--navy) !important; font-weight: 600;
+}}
+.stRadio [role="radiogroup"] label:has(input:checked) * {{ color: var(--navy) !important; }}
+.stCheckbox label, .stCheckbox label * {{ color: var(--ink) !important; }}
+
+/* ── Toggle switch (dark-mode control) ─────────────────────── */
+[data-testid="stToggle"] label p {{ color: var(--ink) !important; font-weight: 500; }}
+
+/* ── Text / number inputs ──────────────────────────────────── */
+.stTextInput input, .stNumberInput input, .stTextArea textarea {{
+  color: var(--ink) !important; background: var(--surface) !important;
+  border: 1px solid var(--steel-200) !important; border-radius: 3px;
+  -webkit-text-fill-color: var(--ink);
+}}
+.stTextInput input::placeholder, .stTextArea textarea::placeholder {{
+  color: var(--steel-400) !important; -webkit-text-fill-color: var(--steel-400);
+}}
+
+/* ── Select / multiselect — closed control ─────────────────── */
+.stSelectbox [data-baseweb="select"] > div, .stMultiSelect [data-baseweb="select"] > div {{
+  background: var(--surface) !important; border: 1px solid var(--steel-200) !important;
+  border-radius: 3px; color: var(--ink) !important;
+}}
+.stSelectbox [data-baseweb="select"] *, .stMultiSelect [data-baseweb="select"] * {{ color: var(--ink) !important; }}
+.stSelectbox svg, .stMultiSelect svg {{ fill: var(--ink-soft) !important; }}
+
+/* Dropdown menu — rendered in a portal outside .stApp */
+[data-baseweb="popover"], [data-baseweb="menu"] {{
+  background: var(--surface) !important; border: 1px solid var(--steel-200) !important;
+}}
+[data-baseweb="popover"] li, [data-baseweb="menu"] li,
+[data-baseweb="popover"] li *, [data-baseweb="menu"] li * {{
+  color: var(--ink) !important; background: transparent !important;
+}}
+[data-baseweb="menu"] li[aria-selected="true"], [data-baseweb="menu"] li:hover {{
+  background: var(--menu-hover) !important;
+}}
+
+/* ── File uploader ──────────────────────────────────────────── */
+[data-testid="stFileUploader"] section {{
+  background: var(--surface) !important; border: 1px dashed var(--steel-200) !important; border-radius: 3px;
+}}
+[data-testid="stFileUploader"] * {{ color: var(--ink) !important; }}
+[data-testid="stFileUploader"] small {{ color: var(--ink-soft) !important; }}
+[data-testid="stFileUploader"] button {{
+  background: var(--surface) !important; border: 1px solid var(--steel-200) !important; color: var(--ink) !important;
+}}
+
+/* ── Expanders ──────────────────────────────────────────────── */
+[data-testid="stExpander"] {{ background: var(--surface); border: 1px solid var(--steel-200); border-radius: 3px; }}
+[data-testid="stExpander"] summary, [data-testid="stExpander"] summary * {{ color: var(--ink) !important; }}
+
+/* ── Status / spinner / alerts ─────────────────────────────── */
+[data-testid="stStatusWidget"] *, .stSpinner * {{ color: var(--ink) !important; }}
+[data-testid="stAlert"] * {{ color: var(--ink) !important; }}
+
+/* ── Native Streamlit chrome: top header bar + toolbar ─────────
+   This sits outside .stApp's own background, so it needs its own
+   rules or it stays white regardless of the in-app theme toggle. */
+[data-testid="stHeader"] {{
+  background: var(--steel-50) !important;
+}}
+[data-testid="stToolbar"], [data-testid="stToolbarActions"] {{
+  background: transparent !important;
+}}
+[data-testid="stHeader"] button, [data-testid="stHeader"] a,
+[data-testid="stHeader"] svg, [data-testid="stHeader"] span,
+[data-testid="stToolbar"] button, [data-testid="stToolbar"] svg {{
+  color: var(--ink-soft) !important; fill: var(--ink-soft) !important;
+}}
+[data-testid="stHeader"] button:hover, [data-testid="stToolbar"] button:hover {{
+  color: var(--ink) !important; fill: var(--ink) !important;
+  background: var(--steel-100) !important;
+}}
+/* Sidebar collapse/expand arrow control */
+[data-testid="stSidebarCollapsedControl"] button,
+[data-testid="stSidebarCollapsedControl"] svg,
+[data-testid="collapsedControl"] button,
+[data-testid="collapsedControl"] svg {{
+  color: var(--ink-soft) !important; fill: var(--ink-soft) !important;
+}}
+[data-testid="stDecoration"] {{ background: var(--navy) !important; }}
+/* Main content area background (separate node from .stApp in newer Streamlit) */
+[data-testid="stAppViewContainer"], [data-testid="stMain"] {{
+  background: var(--steel-50) !important;
+}}
+
+.stApp *:focus-visible {{ outline: 2px solid var(--navy) !important; outline-offset: 2px; }}
+@media (prefers-reduced-motion: reduce) {{ * {{ transition: none !important; animation: none !important; }} }}
+</style>
+"""
+
+
+def kpi_row(items):
+    """items: list of (label, value, footnote, tone). tone in '', 'flag', 'clear', 'alert', 'key'."""
+    tiles = "".join(
+        f'<div class="kpi {tone}"><div class="label">{label}</div>'
+        f'<div class="value">{value}</div>'
+        + (f'<div class="foot">{foot}</div>' if foot else '')
+        + '</div>'
+        for label, value, foot, tone in items
+    )
+    st.markdown(f'<div class="kpi-row">{tiles}</div>', unsafe_allow_html=True)
+
+
+def section(title, note=None):
+    st.markdown(f'<div class="sect">{title}</div>', unsafe_allow_html=True)
+    if note:
+        st.markdown(f'<div class="sect-note">{note}</div>', unsafe_allow_html=True)
+
+
+# ── Appearance toggle — first thing in the sidebar ─────────────────────
+if "dark_mode" not in st.session_state:
+    st.session_state["dark_mode"] = True
+
+st.sidebar.toggle("Dark mode", key="dark_mode")
+_theme_mode = "dark" if st.session_state["dark_mode"] else "light"
+
+st.markdown(build_theme_css(_theme_mode), unsafe_allow_html=True)
+
+st.markdown(
+    '<div class="masthead">'
+    '<div><h1>Fleet Security — Depot Control</h1>'
+    '<p class="sub">Anomalous driver behaviour detection from GPS telemetry</p></div>'
+    f'<div class="stamp">LightGBM + XGBoost ensemble<br>Session {datetime.now().strftime("%d %b %Y · %H:%M")}</div>'
+    '</div>',
+    unsafe_allow_html=True
+)
 
 # ══════════════════════════════════════════════════════════════════════
 # ABSOLUTE PATHS — updated for new FYP folder architecture
@@ -343,7 +669,7 @@ def run_full_pipeline(uploaded_files):
 # ══════════════════════════════════════════════════════════════════════
 # LOAD ALL MODELS
 # ══════════════════════════════════════════════════════════════════════
-st.sidebar.header("⚙️ System Status")
+st.sidebar.markdown("## System status")
 
 # Ensemble model (Module 3)
 required_files = [ENSEMBLE_MODEL_PATH, SCALER_PATH, IMPUTER_PATH]
@@ -354,19 +680,31 @@ if not missing_files:
     scaler      = joblib.load(SCALER_PATH)
     imputer     = joblib.load(IMPUTER_PATH)
     model_ready = True
-    st.sidebar.success("✅ Ensemble Model Loaded")
+    st.sidebar.markdown(
+        '<div class="pill ok">Detection model ready<br>'
+        '<span class="mono">LightGBM + XGBoost</span></div>',
+        unsafe_allow_html=True)
 else:
     model_ready = False
-    st.sidebar.warning(f"⚠️ Missing: {', '.join(missing_files)}")
-    st.sidebar.info("Run notebooks/module3_model_training.ipynb first.")
+    st.sidebar.markdown(
+        '<div class="pill warn">Detection model missing<br>'
+        f'<span class="mono">{", ".join(missing_files)}</span></div>',
+        unsafe_allow_html=True)
+    st.sidebar.caption("Run module3_model_training.ipynb to generate these files.")
 
 # Online model (Module 4)
 if os.path.exists(ONLINE_MODEL_PATH):
     online_model = joblib.load(ONLINE_MODEL_PATH)
-    st.sidebar.success("✅ Online Learning Model Loaded")
+    st.sidebar.markdown(
+        '<div class="pill ok">Online learning active<br>'
+        '<span class="mono">updates on each verdict</span></div>',
+        unsafe_allow_html=True)
 else:
     online_model = None
-    st.sidebar.warning("⚠️ Online model not found — run Module 4 first")
+    st.sidebar.markdown(
+        '<div class="pill warn">Online learning unavailable<br>'
+        '<span class="mono">run Module 4 to enable</span></div>',
+        unsafe_allow_html=True)
 
 # Feature columns
 if os.path.exists(FEATURE_COLS_PATH):
@@ -376,7 +714,7 @@ else:
     feature_cols = None
 
 # Show active paths in sidebar (helps debug)
-with st.sidebar.expander("📁 Active Paths"):
+with st.sidebar.expander("File locations"):
     st.caption(f"FYP Root: {FYP_DIR}")
     st.caption(f"Models:   {MODELS_DIR}")
     st.caption(f"Raw Data: {DATA_RAW_DIR}")
@@ -386,22 +724,21 @@ with st.sidebar.expander("📁 Active Paths"):
 # TABS
 # ══════════════════════════════════════════════════════════════════════
 tab1, tab2, tab3, tab4 = st.tabs([
-    "🔍 Real-Time Audit",
-    "📊 Security Analytics",
-    "🔄 Feedback Log",
-    "🗂️ File Scanner"
+    "Audit",
+    "Operational impact",
+    "Verdict log",
+    "File scanner",
 ])
 
 # ══════════════════════════════════════════════════════════════════════
 # TAB 1 — Real-Time Audit
 # ══════════════════════════════════════════════════════════════════════
 with tab1:
-    st.header("Trip Risk Assessment")
-
-    st.sidebar.header("📂 Data Input")
+    st.sidebar.markdown("## Data input")
     input_mode = st.sidebar.radio(
-        "Choose input type:",
-        ["📁 Raw JSON Files (recommended)", "📄 Preprocessed CSV"]
+        "Source",
+        ["Raw JSON telemetry", "Preprocessed CSV"],
+        label_visibility="collapsed",
     )
 
     features_df = None
@@ -416,18 +753,23 @@ with tab1:
         )
 
         if uploaded_jsons:
-            st.sidebar.success(f"✅ {len(uploaded_jsons)} file(s) ready")
-            st.info(f"📁 {len(uploaded_jsons)} JSON file(s) uploaded — click below to process")
+            st.sidebar.caption(f"{len(uploaded_jsons)} file(s) staged")
+            section("Staged telemetry",
+                    f"{len(uploaded_jsons)} file(s) ready. Processing segments them into "
+                    f"trips and derives the behavioural features the model scores.")
 
-            if st.button("⚙️ Process JSON Files", type="primary"):
+            if st.button("Process files", type="primary"):
                 features_df = run_full_pipeline(uploaded_jsons)
                 if features_df is not None:
                     st.session_state['features_df'] = features_df
                     st.session_state.pop('audit_results', None)
+                    st.session_state.pop('reviewed_trips', None)
                     st.success(f"✅ Done! {len(features_df)} trip segments ready for audit.")
         else:
-            st.info("👈 Upload your Month_Day_Vehicle.json files from the sidebar.\n\n"
-                    "💡 Use the **🗂️ File Scanner** tab to identify which files have real vehicle movement.")
+            section("No telemetry loaded",
+                    "Upload Month_Day_Vehicle.json files from the sidebar to begin. "
+                    "The File scanner tab tells you which files contain actual vehicle "
+                    "movement before you commit to processing them.")
 
     # ── MODE B: Preprocessed CSV ──────────────────────────────────────
     else:
@@ -441,9 +783,11 @@ with tab1:
             features_df = pd.read_csv(uploaded_csv)
             st.session_state['features_df'] = features_df
             st.session_state.pop('audit_results', None)
-            st.success(f"✅ CSV loaded — {len(features_df)} trips ready.")
+            st.session_state.pop('reviewed_trips', None)
+            st.caption(f"{len(features_df)} trips loaded.")
         else:
-            st.info("👈 Upload trip_features_labelled.csv from data/processed/ folder.")
+            section("No telemetry loaded",
+                    "Upload trip_features_labelled.csv from your data/processed folder.")
 
     # Restore from session state
     if features_df is None and 'features_df' in st.session_state:
@@ -451,20 +795,23 @@ with tab1:
 
     # ── Summary + Audit ───────────────────────────────────────────────
     if features_df is not None:
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Total Trips",     len(features_df))
-        c2.metric("Vehicles Active", features_df['vehicle_id'].nunique())
-        c3.metric("Total Distance",  f"{features_df['total_km'].sum():.0f} km")
         fuel_total = features_df['fuel_consumed_L'].sum() if 'fuel_consumed_L' in features_df.columns else 0
-        c4.metric("Fuel Tracked", f"{fuel_total:.1f} L")
-
-        st.divider()
+        section("Fleet summary")
+        kpi_row([
+            ("Trips segmented", f"{len(features_df):,}", None, ""),
+            ("Vehicles",        f"{features_df['vehicle_id'].nunique()}", None, ""),
+            ("Distance",        f"{features_df['total_km'].sum():,.0f}", "km", ""),
+            ("Fuel tracked",    f"{fuel_total:,.1f}", "litres", ""),
+        ])
 
         if not model_ready:
-            st.warning("⚠️ Model files not found. Run notebooks/module3_model_training.ipynb first.")
+            st.markdown(
+                '<div class="verdict flag">Detection model not loaded. Run '
+                'module3_model_training.ipynb, then copy the .pkl files into your '
+                'models folder.</div>', unsafe_allow_html=True)
         else:
-            if st.button("🚀 Run Security Audit", type="primary"):
-                with st.spinner("Analysing trips with AI model..."):
+            if st.button("Run security audit", type="primary"):
+                with st.spinner("Scoring trips..."):
                     drop_cols = [
                         'trip_id', 'vehicle_id', 'start_time', 'end_time',
                         'is_anomaly', 'anomaly_score',
@@ -490,7 +837,6 @@ with tab1:
 
                     features_df['Detection'] = preds
                     st.session_state['audit_results'] = features_df
-                    st.success(f"✅ Audit complete! {int(preds.sum())} anomalies out of {len(preds)} trips.")
 
     # ── Results Table ─────────────────────────────────────────────────
     if 'audit_results' in st.session_state:
@@ -498,59 +844,111 @@ with tab1:
         anomalies = res_df[res_df['Detection'] == 1]
         normal    = res_df[res_df['Detection'] == 0]
 
-        r1, r2, r3 = st.columns(3)
-        r1.metric("🚨 Anomalies Detected", len(anomalies))
-        r2.metric("✅ Normal Trips",        len(normal))
-        r3.metric("⚠️ Anomaly Rate",        f"{len(anomalies)/len(res_df)*100:.1f}%")
+        if 'reviewed_trips' not in st.session_state:
+            st.session_state['reviewed_trips'] = {}   # trip_id -> verdict label
+        reviewed = st.session_state['reviewed_trips']
 
-        st.write("### 📜 Full Audit Results")
+        pending = anomalies[~anomalies['trip_id'].isin(reviewed.keys())]
+
+        rate = len(anomalies) / len(res_df) * 100
+
+        section("Audit result")
+        kpi_row([
+            ("Awaiting review", f"{len(pending):,}", "trips", "flag" if len(pending) else "clear"),
+            ("Reviewed",        f"{len(reviewed):,}", "trips", ""),
+            ("Cleared",         f"{len(normal):,}",   "trips", "clear"),
+            ("Flag rate",       f"{rate:.1f}%",       "of all trips", ""),
+        ])
+
+        if len(anomalies) == 0:
+            st.markdown('<div class="verdict clear">No anomalous trips in this batch. '
+                        'Nothing requires operator review.</div>', unsafe_allow_html=True)
+        elif len(pending) == 0:
+            st.markdown(
+                f'<div class="verdict clear">All {len(anomalies)} flagged trip(s) have '
+                'been reviewed. Nothing outstanding.</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(
+                f'<div class="verdict flag">{len(pending)} trip(s) still need operator review. '
+                'Verify each one below — every verdict updates the model.</div>',
+                unsafe_allow_html=True)
+
+        section("All trips", "Flagged trips are listed first.")
 
         display_cols = ['trip_id', 'vehicle_id', 'start_time',
                         'total_km', 'speed_max', 'suspicious_fuel_drop_L', 'Detection']
         disp = res_df[[c for c in display_cols if c in res_df.columns]].copy()
-        disp['Detection'] = disp['Detection'].map({0: "✅ Normal", 1: "🚨 ANOMALY"})
+        disp = disp.sort_values('Detection', ascending=False)
+        disp['Detection'] = disp['Detection'].map({0: "Cleared", 1: "Flagged"})
+        # Reviewed trips show their actual verdict instead of the raw model flag
+        disp['Detection'] = disp.apply(
+            lambda r: ("Confirmed" if reviewed.get(r['trip_id']) == "Confirmed incident"
+                       else "Dismissed") if r['trip_id'] in reviewed else r['Detection'],
+            axis=1
+        )
+        disp = disp.rename(columns={
+            'trip_id':                'Trip',
+            'vehicle_id':             'Vehicle',
+            'start_time':             'Started',
+            'total_km':               'Distance (km)',
+            'speed_max':              'Peak speed (km/h)',
+            'suspicious_fuel_drop_L': 'Stationary fuel drop (L)',
+            'Detection':              'Status',
+        })
 
-        def highlight_anomaly(row):
-            return ['background-color: #ffcccc' if row['Detection'] == "🚨 ANOMALY"
-                    else '' for _ in row]
+        def mark_status(col):
+            colors = {
+                'Flagged':   '#C97A0A',
+                'Confirmed': '#A32E2E',
+                'Dismissed': '#0E7C66',
+                'Cleared':   '#0E7C66',
+            }
+            return [f'color: {colors.get(v, "inherit")}; font-weight: 600'
+                    if v in ('Flagged', 'Confirmed') else f'color: {colors.get(v, "inherit")}'
+                    for v in col]
 
         st.dataframe(
-            disp.style.apply(highlight_anomaly, axis=1),
-            use_container_width=True
+            disp.style.apply(mark_status, subset=['Status']),
+            use_container_width=True, hide_index=True,
         )
 
         # ── Module 4: Operator Feedback ───────────────────────────────
-        if not anomalies.empty:
-            st.divider()
-            st.subheader("🛠️ Module 4 — Operator Incident Verification")
-            st.caption("Confirm each flagged trip — your decision updates the AI model instantly.")
+        if not pending.empty:
+            section("Operator verification",
+                    "Confirm or dismiss each flagged trip. Verdicts are logged and fed "
+                    "straight into the online model — no retraining required. Once you "
+                    "record a verdict, that trip drops off this list.")
 
             selected_trip = st.selectbox(
-                "Select Anomalous Trip to Investigate:",
-                anomalies['trip_id'].tolist()
+                "Trip under review",
+                pending['trip_id'].tolist()
             )
 
-            details = anomalies[anomalies['trip_id'] == selected_trip].iloc[0]
+            details = pending[pending['trip_id'] == selected_trip].iloc[0]
 
-            col_a, col_b, col_c, col_d = st.columns(4)
-            col_a.metric("⛽ Fuel Drop",  f"{details.get('suspicious_fuel_drop_L', 0):.2f} L")
-            col_b.metric("🚗 Max Speed",  f"{details.get('speed_max', 0):.1f} km/h")
-            col_c.metric("⏱️ Idle Time",  f"{details.get('idle_time_s', 0):.0f} s")
-            col_d.metric("🕐 Start Hour", f"{int(details.get('start_hour', 0))}:00")
+            start_hr = int(details.get('start_hour', 0))
+            kpi_row([
+                ("Stationary fuel drop", f"{details.get('suspicious_fuel_drop_L', 0):.2f}", "litres", "flag"),
+                ("Peak speed",           f"{details.get('speed_max', 0):.0f}", "km/h", ""),
+                ("Idle time",            f"{details.get('idle_time_s', 0)/60:.0f}", "minutes", ""),
+                ("Departed",             f"{start_hr:02d}:00",
+                 "outside operating hours" if (start_hr < 6 or start_hr >= 22) else "within operating hours",
+                 "flag" if (start_hr < 6 or start_hr >= 22) else ""),
+            ])
 
             action = st.radio(
-                "Fleet Manager Decision:",
-                ["⏳ Pending Review",
-                 "✅ Confirmed Theft / Incident",
-                 "❌ False Alarm (Authorised)"],
+                "Verdict",
+                ["Not yet reviewed",
+                 "Confirmed incident",
+                 "Authorised — dismiss flag"],
                 horizontal=True
             )
 
-            if st.button("📨 Submit Feedback", type="primary"):
-                if "Pending" in action:
-                    st.warning("Please make a decision before submitting.")
+            if st.button("Record verdict", type="primary"):
+                if "Not yet" in action:
+                    st.warning("Choose a verdict before recording.")
                 else:
-                    true_label = 1 if "Confirmed" in action else 0
+                    true_label = 1 if "Confirmed incident" in action else 0
 
                     # Ensure logs/ folder exists
                     os.makedirs(LOGS_DIR, exist_ok=True)
@@ -571,22 +969,33 @@ with tab1:
                         fb_new.to_csv(FEEDBACK_LOG, index=False)
 
                     if online_model is not None and feature_cols is not None:
-                        trip_row = anomalies[anomalies['trip_id'] == selected_trip]
+                        trip_row = pending[pending['trip_id'] == selected_trip]
                         xi = trip_row[feature_cols].fillna(0).iloc[0].to_dict()
                         online_model.learn_one(xi, true_label)
                         joblib.dump(online_model, ONLINE_MODEL_PATH)
-                        st.success(f"✅ Feedback submitted for **{selected_trip}**!")
-                        st.info("🔄 Online model updated instantly — no retraining needed.")
+                        online_updated = True
                     else:
-                        st.success(f"✅ Feedback saved for **{selected_trip}**!")
-                        st.warning("⚠️ Online model not loaded — only saved to logs/feedback_log.csv.")
+                        online_updated = False
+
+                    # Mark this trip as reviewed so it drops out of the pending list
+                    st.session_state['reviewed_trips'][selected_trip] = action
+
+                    if online_updated:
+                        st.toast(f"Verdict recorded for {selected_trip} — online model updated.",
+                                 icon="✅")
+                    else:
+                        st.toast(f"Verdict recorded for {selected_trip} — online model not "
+                                 "loaded, saved to log only.", icon="⚠️")
+
+                    st.rerun()
 
 # ══════════════════════════════════════════════════════════════════════
 # TAB 2 — Security Analytics
 # ══════════════════════════════════════════════════════════════════════
 with tab2:
-    st.header("📊 Operational Impact — KPIs")
-    st.markdown("**Target:** ≥90% Precision | ≥20% Reduction in Diesel Loss")
+    section("Programme targets",
+            "Precision and false-positive rate are measured from real operator verdicts. "
+            "Diesel reduction is a pilot simulation, not observed data.")
 
     if os.path.exists(FEEDBACK_LOG):
         fb_df      = pd.read_csv(FEEDBACK_LOG)
@@ -599,74 +1008,126 @@ with tab2:
         confirmed = false_alms = pd.DataFrame()
         precision = fpr = total_fb = 0
 
-    k1, k2, k3, k4 = st.columns(4)
-    k1.metric("Anomaly Precision",
-              f"{precision:.1f}%" if total_fb > 0 else "—", "Target: ≥90%")
-    k2.metric("Diesel Loss Reduction", "24.5%", "Target: ≥20% (Simulated)")
-    k3.metric("Confirmed Incidents",   len(confirmed) if total_fb > 0 else "—")
-    k4.metric("False Positive Rate",
-              f"{fpr:.1f}%" if total_fb > 0 else "—", "Target: Low")
+    if total_fb > 0:
+        prec_tone = "clear" if precision >= 90 else "flag"
+        kpi_row([
+            ("Detection precision", f"{precision:.1f}%", "target ≥90%", prec_tone),
+            ("Confirmed incidents", f"{len(confirmed)}", f"from {total_fb} verdicts", "alert"),
+            ("False positive rate", f"{fpr:.1f}%", "dismissed flags", ""),
+            ("Diesel loss cut",     "24.5%", "simulated · target ≥20%", "key"),
+        ])
+        if precision < 90:
+            st.markdown(
+                f'<div class="verdict flag">Precision is {precision:.1f}%, below the 90% '
+                f'target. With only {total_fb} verdict(s) recorded this figure is still '
+                'volatile — review more flagged trips before drawing conclusions.</div>',
+                unsafe_allow_html=True)
+    else:
+        kpi_row([
+            ("Detection precision", "—", "target ≥90%", ""),
+            ("Confirmed incidents", "—", "no verdicts yet", ""),
+            ("False positive rate", "—", "no verdicts yet", ""),
+            ("Diesel loss cut",     "24.5%", "simulated · target ≥20%", "key"),
+        ])
+        st.markdown('<div class="verdict flag">No operator verdicts recorded yet. '
+                    'Run an audit and verify flagged trips to populate these figures.</div>',
+                    unsafe_allow_html=True)
 
-    st.caption("Precision & FPR calculated from real operator feedback. Diesel reduction is simulated for pilot.")
-    st.divider()
+    section("Diesel loss, 12-month pilot simulation",
+            "Modelled baseline against modelled post-deployment loss. Deployment begins in May.")
 
-    st.subheader("📉 12-Month Diesel Loss Trend (Pilot Simulation)")
     months        = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
     loss_baseline = [450, 430, 460, 440, 480, 450, 400, 390, 380, 370, 360, 350]
     loss_with_ai  = [450, 430, 460, 440, 320, 280, 250, 210, 190, 180, 160, 150]
 
-    chart_df = pd.DataFrame({
-        "Month":              months,
-        "Baseline Loss (L)":  loss_baseline,
-        "With AI System (L)": loss_with_ai,
-    }).set_index("Month")
+    trend_df = pd.DataFrame({
+        "Month":    months * 2,
+        "Litres":   loss_baseline + loss_with_ai,
+        "Scenario": ["Baseline"] * 12 + ["With detection system"] * 12,
+        "Order":    list(range(12)) * 2,
+    })
 
-    st.line_chart(chart_df)
-    st.caption("Figure 1: Simulated diesel loss before vs after AI deployment. Pilot started May.")
+    line = alt.Chart(trend_df).mark_line(point=alt.OverlayMarkDef(size=38), strokeWidth=2.4).encode(
+        x=alt.X("Month:N", sort=months, title=None,
+                axis=alt.Axis(labelAngle=0, labelColor="#55646F", domainColor="#D2D9E0", tickColor="#D2D9E0")),
+        y=alt.Y("Litres:Q", title="Diesel lost (litres)",
+                axis=alt.Axis(labelColor="#55646F", titleColor="#55646F",
+                              gridColor="#E6EAEE", domainOpacity=0)),
+        color=alt.Color("Scenario:N",
+                        scale=alt.Scale(domain=["Baseline", "With detection system"],
+                                        range=["#8C9AA6", "#14506B"]),
+                        legend=alt.Legend(title=None, orient="top", labelColor="#1B2A33")),
+        strokeDash=alt.StrokeDash("Scenario:N",
+                                  scale=alt.Scale(domain=["Baseline", "With detection system"],
+                                                  range=[[5, 4], [1, 0]]),
+                                  legend=None),
+        tooltip=["Month", "Scenario", "Litres"],
+    )
+
+    deploy = alt.Chart(pd.DataFrame({"Month": ["May"]})).mark_rule(
+        color="#C97A0A", strokeWidth=1.5, strokeDash=[3, 3]
+    ).encode(x=alt.X("Month:N", sort=months))
+
+    st.altair_chart(
+        (line + deploy).properties(height=320).configure_view(strokeOpacity=0)
+                       .configure(font="Barlow", background="#FFFFFF", padding=18),
+        use_container_width=True,
+    )
 
     reduction_pct = (sum(loss_baseline[4:]) - sum(loss_with_ai[4:])) / sum(loss_baseline[4:]) * 100
-    st.success(f"📊 Simulated reduction: **{reduction_pct:.1f}%** — Target ≥20% ✅")
+    st.markdown(
+        f'<div class="verdict clear">Simulated reduction from deployment onward: '
+        f'<strong>{reduction_pct:.1f}%</strong> against the ≥20% target. '
+        'These are modelled figures for the pilot design, not measured results.</div>',
+        unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════
 # TAB 3 — Feedback Log
 # ══════════════════════════════════════════════════════════════════════
 with tab3:
-    st.header("🔄 Operator Feedback Log")
-    st.caption(f"Saved to: logs/feedback_log.csv — each entry triggers an online model update.")
+    section("Operator verdict log",
+            "Every recorded verdict, in order. Each one was also passed to the online "
+            "model at the moment it was submitted.")
 
     if os.path.exists(FEEDBACK_LOG):
         fb_df = pd.read_csv(FEEDBACK_LOG)
-        st.dataframe(fb_df, use_container_width=True)
+        n_conf = len(fb_df[fb_df['true_label'] == 1])
+        n_dism = len(fb_df[fb_df['true_label'] == 0])
 
-        f1, f2, f3 = st.columns(3)
-        f1.metric("Total Entries",       len(fb_df))
-        f2.metric("Confirmed Incidents", len(fb_df[fb_df['true_label'] == 1]))
-        f3.metric("False Alarms",        len(fb_df[fb_df['true_label'] == 0]))
+        kpi_row([
+            ("Verdicts recorded",  f"{len(fb_df):,}", None, ""),
+            ("Confirmed incidents", f"{n_conf:,}", "true positives", "alert"),
+            ("Dismissed flags",     f"{n_dism:,}", "false positives", ""),
+        ])
 
-        if st.button("🗑️ Clear Feedback Log"):
-            os.remove(FEEDBACK_LOG)
-            st.success("Feedback log cleared.")
-            st.rerun()
+        st.dataframe(fb_df, use_container_width=True, hide_index=True)
+
+        with st.expander("Clear the log"):
+            st.caption("This permanently deletes every recorded verdict. The online model "
+                       "keeps what it has already learned — clearing the log does not undo it.")
+            if st.button("Delete all verdicts"):
+                os.remove(FEEDBACK_LOG)
+                st.rerun()
     else:
-        st.info("No feedback submitted yet. Verify anomalies in Tab 1 to start building the log.")
-        st.caption(f"Log will be created at: {FEEDBACK_LOG}")
+        st.markdown('<div class="verdict flag">No verdicts recorded yet. Run an audit, '
+                    'then verify flagged trips to start building the log.</div>',
+                    unsafe_allow_html=True)
+        st.caption(f"The log will be created at {FEEDBACK_LOG}")
 
 # ══════════════════════════════════════════════════════════════════════
 # TAB 4 — File Scanner
 # ══════════════════════════════════════════════════════════════════════
 with tab4:
-    st.header("🗂️ File Scanner")
-    st.markdown("Scan your JSON files to find which ones have **real vehicle movement** "
-                "before uploading to the audit.")
+    section("File scanner",
+            "Check which telemetry files contain actual vehicle movement before you "
+            "process them. Parked-vehicle files produce no usable trips.")
 
-    # Default to data/raw/ folder
     folder_path = st.text_input(
-        "Folder path to scan:",
+        "Folder to scan",
         value=DATA_RAW_DIR,
-        help="Default points to your FYP/data/raw/ folder"
     )
 
-    if st.button("🔍 Scan Folder", type="primary"):
+    if st.button("Scan folder", type="primary"):
         if not os.path.exists(folder_path):
             st.error(f"❌ Folder not found: {folder_path}")
         else:
@@ -675,7 +1136,7 @@ with tab4:
             if not json_files:
                 st.warning("No JSON files found in that folder.")
             else:
-                st.info(f"Found {len(json_files)} JSON files. Scanning...")
+                st.caption(f"Scanning {len(json_files)} files...")
 
                 scan_results = []
                 progress     = st.progress(0)
@@ -714,7 +1175,7 @@ with tab4:
                             'IGNITION ON':    ignition_ons,
                             'IGNITION OFF':   ignition_offs,
                             'Fuel Range (L)': round(fuel_range, 2),
-                            'Has Movement':   '✅ Yes' if has_movement else '💤 Parked',
+                            'Has Movement':   'Moving' if has_movement else 'Parked',
                         })
 
                     except Exception as e:
@@ -725,29 +1186,29 @@ with tab4:
                             'IGNITION ON':    0,
                             'IGNITION OFF':   0,
                             'Fuel Range (L)': 0,
-                            'Has Movement':   f'❌ Error: {e}',
+                            'Has Movement':   f'Unreadable: {e}',
                         })
 
                 progress.empty()
                 scan_df = pd.DataFrame(scan_results)
 
-                good = scan_df[scan_df['Has Movement'] == '✅ Yes']
-                park = scan_df[scan_df['Has Movement'] == '💤 Parked']
+                good = scan_df[scan_df['Has Movement'] == 'Moving']
+                park = scan_df[scan_df['Has Movement'] == 'Parked']
 
-                s1, s2, s3 = st.columns(3)
-                s1.metric("Total Files",        len(scan_df))
-                s2.metric("✅ Files With Trips", len(good))
-                s3.metric("💤 Parked Files",     len(park))
-
-                st.divider()
+                kpi_row([
+                    ("Files scanned",  f"{len(scan_df)}", None, ""),
+                    ("With movement",  f"{len(good)}", "usable", "clear"),
+                    ("Parked only",    f"{len(park)}", "no trips", ""),
+                ])
 
                 if not good.empty:
-                    st.subheader("✅ Files With Real Vehicle Movement — Use These!")
-                    st.dataframe(good, use_container_width=True)
-                    st.info(f"💡 Upload these {len(good)} files to the Real-Time Audit tab "
-                            f"for proper anomaly detection.")
+                    section("Files with vehicle movement",
+                            f"Upload these {len(good)} file(s) in the Audit tab.")
+                    st.dataframe(good, use_container_width=True, hide_index=True)
 
                 if not park.empty:
-                    with st.expander(f"💤 Parked / No Movement Files ({len(park)} files)"):
-                        st.dataframe(park, use_container_width=True)
+                    with st.expander(f"Parked files ({len(park)})"):
+                        st.caption("No ignition events or no recorded speed — these "
+                                   "produce no trip segments.")
+                        st.dataframe(park, use_container_width=True, hide_index=True)
                         st.caption("These files only contain parked vehicle data.")

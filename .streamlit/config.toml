@@ -1,0 +1,18 @@
+[theme]
+# This is Streamlit's OWN base theme, separate from the in-app light/dark
+# toggle (top of the sidebar). Set to match the toggle's default (dark)
+# so the very first paint — before your script's CSS even runs — isn't
+# a flash of white. If you change the toggle's default in the script,
+# flip base here too so they stay in sync.
+base = "dark"
+
+primaryColor            = "#4CA3CC"  # navy accent — buttons, focus, active tab
+backgroundColor         = "#0F171D"  # cool steel, main pane
+secondaryBackgroundColor = "#1B262E" # sidebar, cards, inputs
+textColor               = "#E7ECEF"  # ink
+
+font = "sans serif"
+
+[server]
+# Lets you drop in a replacement file and just refresh the browser.
+runOnSave = true
