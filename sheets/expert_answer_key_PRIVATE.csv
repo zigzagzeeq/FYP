@@ -1,0 +1,51 @@
+Trip,trip_id,vehicle_id,system_flagged,proba,source,group,rule_label
+T01,V9_T0165,9,1,0.9997219372819242,flagged,night / early morning,1
+T02,V4_T0039,4,1,0.9522294688080055,flagged,high fuel use,0
+T03,V1_T0140,1,1,0.9987482004424855,flagged,high fuel use,1
+T04,V5_T0215,5,0,0.005544083075199217,unflagged (random),n/a,0
+T05,V5_T0099,5,1,0.9998049584535027,flagged,long trip,1
+T06,V0_T0413,0,0,0.03639087494070594,unflagged (random),n/a,0
+T07,V6_T0026,6,1,0.9971709033156049,flagged,high speed,1
+T08,V1_T0124,1,1,0.9994955025490222,flagged,high fuel use,1
+T09,V0_T0383,0,1,0.851387312503687,flagged,long trip,1
+T10,V7_T0049,7,1,0.9990257530515403,flagged,other,1
+T11,V5_T0135,5,1,0.9999418037142106,flagged,long trip,1
+T12,V5_T0233,5,1,0.9952276118085417,flagged,other,1
+T13,V4_T0051,4,1,0.9998272166278626,flagged,night / early morning,1
+T14,V9_T0124,9,1,0.9996227511470102,flagged,night / early morning,1
+T15,V9_T0055,9,1,0.9628507360603338,flagged,night / early morning,1
+T16,V9_T0097,9,1,0.9935778322872417,flagged,high speed,1
+T17,V1_T0121,1,0,0.680869174160237,unflagged (near miss),n/a,0
+T18,V0_T0335,0,0,0.19125010352425462,unflagged (random),n/a,0
+T19,V0_T0073,0,0,0.008008576123631934,unflagged (random),n/a,0
+T20,V9_T0054,9,1,0.9995953145134485,flagged,high fuel use,1
+T21,V0_T0013,0,1,0.9084630869271442,flagged,other,1
+T22,V7_T0093,7,1,0.9987598056127742,flagged,high speed,1
+T23,V1_T0162,1,1,0.9631875044061378,flagged,other,1
+T24,V7_T0039,7,1,0.9753099544719719,flagged,other,1
+T25,V1_T0167,1,1,0.9989384947939648,flagged,high speed,1
+T26,V9_T0236,9,1,0.9997333086955538,flagged,high fuel use,1
+T27,V3_T0022,3,0,0.6468313904569178,unflagged (near miss),n/a,1
+T28,V1_T0166,1,1,0.9995369578752348,flagged,long trip,1
+T29,V8_T0032,8,1,0.9960482811920489,flagged,night / early morning,1
+T30,V9_T0075,9,1,0.9957072450246207,flagged,high fuel use,1
+T31,V6_T0323,6,1,0.9982139350222603,flagged,other,1
+T32,V1_T0117,1,1,0.9967749193555611,flagged,high speed,1
+T33,V4_T0052,4,1,0.9993200130967577,flagged,high speed,1
+T34,V1_T0116,1,1,0.9288551440948123,flagged,high speed,1
+T35,V7_T0073,7,1,0.999600447993527,flagged,high speed,1
+T36,V5_T0216,5,1,0.9997431128180604,flagged,long trip,1
+T37,V0_T0188,0,0,0.6707763491273868,unflagged (near miss),n/a,1
+T38,V7_T0109,7,1,0.9847879422422128,flagged,high fuel use,1
+T39,V8_T0043,8,1,0.9990741319073129,flagged,night / early morning,1
+T40,V0_T0229,0,0,0.6811462215427967,unflagged (near miss),n/a,1
+T41,V5_T0229,5,1,0.998306920447741,flagged,high fuel use,1
+T42,V1_T0161,1,1,0.9996637962203583,flagged,long trip,1
+T43,V5_T0117,5,1,0.9998421621483635,flagged,night / early morning,1
+T44,V0_T0029,0,0,0.0066808074410114,unflagged (random),n/a,0
+T45,V5_T0217,5,1,0.9991495139193602,flagged,high fuel use,1
+T46,V5_T0234,5,1,0.9997413176658921,flagged,long trip,1
+T47,V8_T0052,8,0,0.6753003895408894,unflagged (near miss),n/a,0
+T48,V9_T0141,9,1,0.9153791111266331,flagged,other,1
+T49,V8_T0031,8,1,0.993944300201824,flagged,night / early morning,1
+T50,V6_T0585,6,1,0.9996222738471533,flagged,other,1
